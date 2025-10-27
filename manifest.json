@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "default_locale": "de",
+  "name": "__MSG_extName__",
+  "description": "__MSG_extDescription__",
+  "version": "0.0.1",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.simap.ch/de*",
+        "https://www.simap.ch/en*",
+        "https://www.simap.ch/fr*",
+        "https://www.simap.ch/it*",
+        "https://www.simap.ch/de/vendor/project-manager*",
+        "https://www.simap.ch/en/vendor/project-manager*",
+        "https://www.simap.ch/fr/vendor/project-manager*",
+        "https://www.simap.ch/it/vendor/project-manager*"
+      ],
+      "js": [
+        "scripts/contentScript.js"
+      ],
+      "css": [
+        "styles/contentStyles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
