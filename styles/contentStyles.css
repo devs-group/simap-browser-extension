@@ -1,9 +1,23 @@
+:root {
+  --simap-notes-surface: #eff1f5;
+  --simap-notes-border: rgba(71, 85, 105, 0.5);
+  --simap-notes-focus: #2563eb;
+  --simap-status-not-applied-color: #1f2937;
+  --simap-status-applied-color: #f59e0b;
+  --simap-status-won-color: #16a34a;
+  --simap-status-rejected-color: #dc2626;
+  --simap-status-applied-background: rgba(245, 158, 11, 0.12);
+  --simap-status-won-background: rgba(22, 163, 74, 0.12);
+  --simap-status-rejected-background: rgba(220, 38, 38, 0.12);
+}
+
 .simap-notes-extension-container {
   margin-top: 12px;
   padding: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--simap-notes-border);
   border-radius: 8px;
-  background: #f7f7f7;
+  background: var(--simap-notes-surface);
+  color: #111827;
   font-family: inherit;
   display: flex;
   flex-direction: column;
@@ -16,18 +30,22 @@
 }
 
 .simap-notes-extension-container textarea {
-  min-height: 72px;
+  min-height: 92px;
   resize: vertical;
   padding: 8px;
   border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  font: inherit;
-  background: #fff;
-  color: inherit;
+  border: 1px solid var(--simap-notes-border);
+  font: 0.85rem/1.4 inherit;
+  background: #ffffff;
+  color: #111827;
+}
+
+.simap-notes-extension-container textarea::placeholder {
+  color: rgba(55, 65, 81, 0.8);
 }
 
 .simap-notes-extension-container textarea:focus {
-  outline: 2px solid #1976d2;
+  outline: 2px solid var(--simap-notes-focus);
   outline-offset: 1px;
 }
 
@@ -49,15 +67,6 @@
   gap: 8px;
 }
 
-.simap-status-option input[type="radio"] {
-  margin: 0;
-  cursor: pointer;
-}
-
-.simap-status-option input[type="radio"]:checked + .simap-status-text {
-  text-decoration: underline;
-}
-
 .simap-status-option {
   display: flex;
   align-items: center;
@@ -67,36 +76,105 @@
   user-select: none;
 }
 
+.simap-status-option input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.simap-status-option input[type="radio"]:checked + .simap-status-text {
+  text-decoration: underline;
+}
+
 .simap-status-not-applied {
-  color: #6b7280;
+  color: var(--simap-status-not-applied-color);
 }
 
 .simap-status-applied {
-  color: #f59e0b;
+  color: var(--simap-status-applied-color);
 }
 
 .simap-status-won {
-  color: #16a34a;
+  color: var(--simap-status-won-color);
 }
 
 .simap-status-rejected {
-  color: #dc2626;
+  color: var(--simap-status-rejected-color);
 }
 
 .simap-card-status-applied {
-  background-color: #fef3c7 !important;
-  outline: 2px solid #f59e0b !important;
-  outline-offset: -2px;
+  --simap-card-status-color: var(--simap-status-applied-color);
 }
 
 .simap-card-status-won {
-  background-color: #dcfce7 !important;
-  outline: 2px solid #16a34a !important;
-  outline-offset: -2px;
+  --simap-card-status-color: var(--simap-status-won-color);
 }
 
 .simap-card-status-rejected {
-  background-color: #fee2e2 !important;
-  outline: 2px solid #dc2626 !important;
+  --simap-card-status-color: var(--simap-status-rejected-color);
+}
+
+.simap-card-status-not-applied {
+  --simap-card-status-color: var(--simap-status-not-applied-color);
+}
+
+.simap-card-status-applied,
+.simap-card-status-won,
+.simap-card-status-rejected {
+  outline: 2px solid var(--simap-card-status-color) !important;
   outline-offset: -2px;
+}
+
+.simap-card-status-not-applied {
+  outline: 2px solid color-mix(in srgb, var(--simap-card-status-color) 20%, #ffffff 80%) !important;
+  outline-offset: -2px;
+}
+
+article.MuiPaper-root.simap-card-status-applied,
+article.MuiPaper-root.simap-card-status-applied:hover {
+  background-color: var(--simap-status-applied-background);
+}
+
+article.MuiPaper-root.simap-card-status-won,
+article.MuiPaper-root.simap-card-status-won:hover {
+  background-color: var(--simap-status-won-background);
+}
+
+article.MuiPaper-root.simap-card-status-rejected,
+article.MuiPaper-root.simap-card-status-rejected:hover {
+  background-color: var(--simap-status-rejected-background);
+}
+
+html:is(.dark, .theme-dark, .dark-mode, .night-mode,
+        [data-theme="dark"], [data-color-scheme="dark"],
+        [data-darkreader-mode]) {
+  --simap-notes-surface: #1f2933;
+  --simap-notes-border: rgba(148, 163, 184, 0.35);
+  --simap-notes-focus: #60a5fa;
+  --simap-status-not-applied-color: #d1d5db;
+  --simap-status-applied-color: #fbbf24;
+  --simap-status-won-color: #34d399;
+  --simap-status-rejected-color: #f87171;
+  --simap-status-applied-background: rgba(251, 191, 36, 0.12);
+  --simap-status-won-background: rgba(52, 211, 153, 0.12);
+  --simap-status-rejected-background: rgba(248, 113, 113, 0.12);
+}
+
+html:is(.dark, .theme-dark, .dark-mode, .night-mode,
+        [data-theme="dark"], [data-color-scheme="dark"],
+        [data-darkreader-mode]) .simap-notes-extension-container {
+  color: #f9fafb;
+}
+
+html:is(.dark, .theme-dark, .dark-mode, .night-mode,
+        [data-theme="dark"], [data-color-scheme="dark"],
+        [data-darkreader-mode]) .simap-notes-extension-container textarea {
+  background: #111827;
+  color: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+html:is(.dark, .theme-dark, .dark-mode, .night-mode,
+        [data-theme="dark"], [data-color-scheme="dark"],
+        [data-darkreader-mode]) .simap-notes-extension-container textarea::placeholder {
+  color: rgba(229, 231, 235, 0.65);
 }
