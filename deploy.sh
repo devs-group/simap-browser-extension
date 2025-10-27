@@ -4,6 +4,25 @@ set -euo pipefail
 
 PROJECT_NAME="simap-project-notes"
 MANIFEST_PATH="manifest.json"
+CI_MODE=0
+VERSION_ARG=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ci)
+      CI_MODE=1
+      shift
+      ;;
+    --version)
+      VERSION_ARG="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      exit 1
+      ;;
+  esac
+done
 
 if [[ ! -f "$MANIFEST_PATH" ]]; then
   echo "manifest.json not found. Run this script from the repository root."
@@ -19,14 +38,43 @@ PY
 )
 
 echo "Current version: ${current_version}"
-read -rp "Enter new version (x.y.z): " new_version
 
-if [[ ! $new_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Version must match the format x.y.z"
-  exit 1
-fi
+new_version=""
 
-is_higher=$(python3 - <<PY
+if [[ $CI_MODE -eq 1 ]]; then
+  tag_version="$VERSION_ARG"
+  if [[ -z "$tag_version" ]]; then
+    tag_version=$(git describe --tags --exact-match 2>/dev/null || true)
+  fi
+
+  if [[ -z "$tag_version" ]]; then
+    echo "Unable to determine tag version in CI mode. Pass --version or run on a tagged commit."
+    exit 1
+  fi
+
+  if [[ "$tag_version" == v* ]]; then
+    new_version="${tag_version#v}"
+  else
+    new_version="$tag_version"
+  fi
+
+  if [[ "$new_version" != "$current_version" ]]; then
+    echo "manifest version ($current_version) must match tag version ($new_version) in CI mode."
+    exit 1
+  fi
+else
+  if [[ -z "$VERSION_ARG" ]]; then
+    read -rp "Enter new version (x.y.z): " VERSION_ARG
+  fi
+
+  new_version="$VERSION_ARG"
+
+  if [[ ! $new_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Version must match the format x.y.z"
+    exit 1
+  fi
+
+  is_higher=$(python3 - <<PY
 def parse(v):
     return tuple(int(part) for part in v.split("."))
 
@@ -36,12 +84,12 @@ print("yes" if new > cur else "no")
 PY
 )
 
-if [[ "$is_higher" != "yes" ]]; then
-  echo "New version must be greater than current version."
-  exit 1
-fi
+  if [[ "$is_higher" != "yes" ]]; then
+    echo "New version must be greater than current version."
+    exit 1
+  fi
 
-python3 - <<PY
+  python3 - <<PY
 import json
 with open("$MANIFEST_PATH", "r", encoding="utf-8") as f:
     manifest = json.load(f)
@@ -51,9 +99,10 @@ with open("$MANIFEST_PATH", "w", encoding="utf-8") as f:
     f.write("\n")
 PY
 
-git add "$MANIFEST_PATH"
-git commit -m "Release v$new_version"
-git tag -a "v$new_version" -m "Release v$new_version"
+  git add "$MANIFEST_PATH"
+  git commit -m "Release v$new_version"
+  git tag -a "v$new_version" -m "Release v$new_version"
+fi
 
 # Ensure dist directory exists
 mkdir -p dist
