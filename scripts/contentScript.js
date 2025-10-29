@@ -4,6 +4,7 @@
   const NOTE_CONTAINER_CLASS = "simap-notes-extension-container";
   const SUPPORTED_LANGUAGES = new Set(["de", "en", "fr", "it"]);
   const DEFAULT_STATUS = "not-applied";
+  const ROUTE_POLL_INTERVAL_MS = 500;
   const STATUS_OPTIONS = [
     { value: "not-applied", color: "#6b7280" },
     { value: "applied", color: "#2563eb" },
@@ -96,11 +97,7 @@
 
   let currentPathname = window.location.pathname;
   let activeLanguage = determineLanguage();
-
-  if (!isSupportedPage(activeLanguage)) {
-    // Bail out early if we are not on a page that should display notes.
-    return;
-  }
+  let routePollingTimer = null;
 
   let copy = LOCALIZED_COPY[activeLanguage ?? "de"];
 
@@ -151,21 +148,29 @@
     card.classList.add(targetClass);
   };
 
+  const resetCard = (card) => {
+    const wrapper = card.querySelector(`.${NOTE_CONTAINER_CLASS}`);
+    if (wrapper) {
+      wrapper.remove();
+    }
+    delete card.dataset.simapNotesReady;
+    delete card.dataset.simapNotesProjectId;
+    CARD_STATUS_CLASSES.forEach((className) => card.classList.remove(className));
+  };
+
   const teardownUi = () => {
     document
       .querySelectorAll(`.${NOTE_CONTAINER_CLASS}`)
       .forEach((wrapper) => {
         const card = wrapper.closest(CARD_SELECTOR);
         if (card) {
-          delete card.dataset.simapNotesReady;
+          resetCard(card);
+        } else {
+          wrapper.remove();
         }
-        wrapper.remove();
       });
 
-    document.querySelectorAll(CARD_SELECTOR).forEach((card) => {
-      delete card.dataset.simapNotesReady;
-      CARD_STATUS_CLASSES.forEach((className) => card.classList.remove(className));
-    });
+    document.querySelectorAll(CARD_SELECTOR).forEach(resetCard);
   };
 
   const loadStoredNotes = () => {
@@ -209,7 +214,10 @@
 
   const injectNoteBox = (card) => {
     if (card.dataset.simapNotesReady === "true") {
-      return;
+      if (card.dataset.simapNotesProjectId === card.id) {
+        return;
+      }
+      resetCard(card);
     }
 
     const projectId = card.id;
@@ -290,10 +298,25 @@
 
     card.appendChild(wrapper);
     card.dataset.simapNotesReady = "true";
+    card.dataset.simapNotesProjectId = projectId;
   };
 
   const scanForCards = () => {
     document.querySelectorAll(CARD_SELECTOR).forEach(injectNoteBox);
+  };
+
+  const DELAYED_SCAN_MS = 1000;
+  let delayedScanTimer = null;
+
+  const scheduleDelayedScan = () => {
+    if (delayedScanTimer) {
+      clearTimeout(delayedScanTimer);
+    }
+
+    delayedScanTimer = setTimeout(() => {
+      delayedScanTimer = null;
+      scanForCards();
+    }, DELAYED_SCAN_MS);
   };
 
   const observer = new MutationObserver((mutations) => {
@@ -301,7 +324,10 @@
     let shouldRescan = false;
 
     for (const mutation of mutations) {
-      if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+      if (
+        (mutation.type === "childList" && mutation.addedNodes.length > 0) ||
+        (mutation.type === "attributes" && mutation.attributeName === "id")
+      ) {
         shouldRescan = true;
         break;
       }
@@ -309,6 +335,7 @@
 
     if (shouldRescan) {
       scanForCards();
+      scheduleDelayedScan();
     }
   });
 
@@ -321,6 +348,9 @@
     observer.observe(document.body, {
       childList: true,
       subtree: true,
+      attributes: true,
+      attributeFilter: ["id"],
+      attributeOldValue: true,
     });
     isObserving = true;
   };
@@ -331,6 +361,10 @@
     }
     observer.disconnect();
     isObserving = false;
+    if (delayedScanTimer) {
+      clearTimeout(delayedScanTimer);
+      delayedScanTimer = null;
+    }
   };
 
   const reinitializeForLanguage = (language) => {
@@ -346,6 +380,7 @@
     currentPathname = window.location.pathname;
     setLanguage(language ?? "de");
     scanForCards();
+    scheduleDelayedScan();
     startObserver();
   };
 
@@ -360,6 +395,14 @@
     reinitializeForLanguage(newLanguage);
   };
 
+  const startRoutePolling = () => {
+    if (routePollingTimer) {
+      return;
+    }
+
+    routePollingTimer = setInterval(handleRouteChange, ROUTE_POLL_INTERVAL_MS);
+  };
+
   const ensureLanguageSync = () => {
     const latestLanguage = determineLanguage();
     if (latestLanguage !== activeLanguage) {
@@ -369,11 +412,13 @@
 
   const installRouteListeners = () => {
     if (window.__simapNotesHistoryPatched) {
+      startRoutePolling();
       window.addEventListener("simap-notes-route-change", handleRouteChange);
       return;
     }
 
     window.__simapNotesHistoryPatched = true;
+    startRoutePolling();
 
     const notifyRouteChange = () => {
       window.dispatchEvent(new Event("simap-notes-route-change"));
@@ -394,8 +439,7 @@
 
   const boot = () => {
     installRouteListeners();
-    scanForCards();
-    startObserver();
+    reinitializeForLanguage(determineLanguage());
   };
 
   if (document.readyState === "loading") {
