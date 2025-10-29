@@ -3,7 +3,8 @@
 Enhance [simap.ch](https://www.simap.ch/) with personal notes and application status tracking directly on each project card. The extension injects an inline notes panel and radio-based status selector (Not applied, Proposal submitted, Won, Rejected), stores data in `localStorage`, and keeps everything in sync while you browse localized German, English, French, or Italian versions of SIMAP.
 
 <p align="center">
-  <img src=".github/preview_2025-10-27.png" alt="SIMAP Project Notes screenshot" width="100%" />
+  <img src="webstore/preview_light_with_bgc.png" alt="SIMAP Project Notes screenshot" width="48%" />
+  <img src="webstore/preview_dark_with_bgc.png" alt="SIMAP Project Notes screenshot" width="48%" />
 </p>
 
 ## Features
